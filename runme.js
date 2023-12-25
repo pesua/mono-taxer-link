@@ -109,7 +109,7 @@ function sendExchange(timestamp, from, currencyRate, comment = null) {
         });
 }
 function getOperations() {
-    const url = 'https://taxer.ua/api/finances/operation/load?lang=uk';
+    const url = 'https://taxer.ua/api/finances/operation/load?lang=uk&params=';
 
     const data = {
         filters: {},
@@ -119,9 +119,8 @@ function getOperations() {
         userId: userId
     };
 
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(data),
+    return fetch(url + encodeURI(JSON.stringify(data)), {
+        method: 'GET',
         compress: true
     })
         .then(response => response.json())
@@ -178,11 +177,14 @@ lastTransaction = rsp.operations[0].contents[0].timestamp
 
 let transactions = await getTransactions(lastTransaction * 1000 + 1000);
 transactions.sort((a,b) => a.time - b.time);
-transactions.forEach(function (item, index) {
+for (const item of transactions) {
+    const index = transactions.indexOf(item);
     console.log(item, index);
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 seconds delay
     if(item.amount > 0) {
         sendIncome(item.time, item.amount/100, item.description)
     } else {
         sendExchange(item.time, -item.amount/100, item.operationAmount/item.amount, item.description)
     }
-});
+}
+console.log("imported " + transactions.length + " transactions")
